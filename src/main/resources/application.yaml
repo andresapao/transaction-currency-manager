@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: transactions-currency-manager
+  datasource:
+    url: jdbc:postgresql://localhost:5433/transactions_db
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    root: DEBUG # Sets the global logging level to DEBUG
+    org.springframework: DEBUG # Enables DEBUG logs for Spring Framework
+    org.hibernate: DEBUG # Enables DEBUG logs for Hibernate
