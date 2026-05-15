@@ -21,3 +21,10 @@ external:
     # Full endpoint for rates of exchange (used by CurrencyGatewayImpl)
     rates-url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/rates_of_exchange"
 
+# application.yml
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: org.transactions.currency.controller

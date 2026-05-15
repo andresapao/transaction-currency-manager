@@ -1,8 +1,8 @@
 package org.transactions.currency.controller
 
+import io.swagger.v3.oas.annotations.Operation
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import org.transactions.currency.gateway.CurrencyGateway
 import org.transactions.currency.gateway.FindCurrencyService
 import org.transactions.currency.model.CurrencyDTO
 import org.transactions.currency.model.Transaction
@@ -32,7 +32,7 @@ class TransactionController(
         val drivers = service.getAll()
         return ResponseEntity.ok(drivers)
     }
-
+    @Operation(summary = "Get all users", description = "Returns a list of users")
     @PostMapping
     fun create(@RequestBody request: TransactionRequest): ResponseEntity<Transaction> {
         val savedEntity = service.create(request)
