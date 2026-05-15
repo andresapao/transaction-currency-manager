@@ -11,8 +11,8 @@ spring:
       ddl-auto: update
     show-sql: true
 
-logging:
-  level:
-    root: DEBUG # Sets the global logging level to DEBUG
-    org.springframework: DEBUG # Enables DEBUG logs for Spring Framework
-    org.hibernate: DEBUG # Enables DEBUG logs for Hibernate
+external:
+  fiscal:
+    # Full endpoint for rates of exchange (used by CurrencyGatewayImpl)
+    rates-url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/rates_of_exchange"
+

@@ -1,9 +1,12 @@
 package org.transactions.currency.gateway
 
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.service.annotation.GetExchange
+import org.springframework.web.service.annotation.HttpExchange
 import org.transactions.currency.model.CurrencyDTO
-import reactor.core.publisher.Flux
-import java.time.LocalDate
 
+@HttpExchange("\${external.fiscal.rates-url}")
 interface CurrencyGateway {
-    fun getValueAtCurrency(refDate: LocalDate, currency: String): Flux<CurrencyDTO>
+    @GetExchange
+    fun getValueAtCurrency(@RequestParam("filter") filter: String): List<CurrencyDTO>
 }

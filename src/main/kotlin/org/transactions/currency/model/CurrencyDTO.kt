@@ -9,7 +9,7 @@ data class CurrencyDTO(
     @JsonProperty("record_date")
     val recordDate: LocalDate,
     val country: String,
-    val currecny: String,
+    val currency: String,
     @JsonProperty("exchange_rate")
     val rate: BigDecimal,
 
