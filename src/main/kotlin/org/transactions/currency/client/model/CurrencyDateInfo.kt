@@ -1,11 +1,10 @@
-package org.transactions.currency.model
+package org.transactions.currency.client.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonValue
 import java.math.BigDecimal
 import java.time.LocalDate
 
-data class CurrencyDTO(
+data class CurrencyDateInfo(
     @JsonProperty("record_date")
     val recordDate: LocalDate,
     val country: String,
@@ -13,4 +12,4 @@ data class CurrencyDTO(
     @JsonProperty("exchange_rate")
     val rate: BigDecimal,
 
-)
+    )

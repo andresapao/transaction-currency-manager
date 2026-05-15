@@ -3,10 +3,11 @@ package org.transactions.currency.controller
 import io.swagger.v3.oas.annotations.Operation
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.transactions.currency.client.model.CurrencyDateInfo
 import org.transactions.currency.gateway.FindCurrencyService
-import org.transactions.currency.model.CurrencyDTO
-import org.transactions.currency.model.Transaction
+import org.transactions.currency.model.TransactionCurrencyResponse
 import org.transactions.currency.model.TransactionRequest
+import org.transactions.currency.model.entity.Transaction
 import org.transactions.currency.service.TransactionService
 import java.time.LocalDate
 
@@ -20,7 +21,7 @@ class TransactionController(
     fun getCurency(
         @RequestParam(required = false) date: String?,
         @RequestParam(required = false) currency: String = "Real"
-    ): ResponseEntity<List<CurrencyDTO>> {
+    ): ResponseEntity<List<CurrencyDateInfo>> {
         val recordDate = date ?: LocalDate.now().toString()
         val filter = "record_date:eq:$recordDate,currency:eq:$currency"
         val currencies = currencyService.getValueAtCurrency(filter)
@@ -28,11 +29,12 @@ class TransactionController(
     }
 
     @GetMapping
-    fun getDrivers(): ResponseEntity<List<Transaction>> {
-        val drivers = service.getAll()
-        return ResponseEntity.ok(drivers)
+    fun get(@RequestParam(required = false) id: Long): ResponseEntity<TransactionCurrencyResponse> {
+        val transactionResponse = service.getTransactionWithExchangeRate(id, "Real")
+        return ResponseEntity.ok(transactionResponse)
     }
-    @Operation(summary = "Get all users", description = "Returns a list of users")
+
+    @Operation(summary = "Insert USD transaction", description = "Insert transaction")
     @PostMapping
     fun create(@RequestBody request: TransactionRequest): ResponseEntity<Transaction> {
         val savedEntity = service.create(request)
