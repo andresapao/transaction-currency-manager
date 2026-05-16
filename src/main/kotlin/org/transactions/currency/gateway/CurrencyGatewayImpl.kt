@@ -22,7 +22,7 @@ class CurrencyGatewayImpl(
             .uri("$ratesUrl?filter={filter}", mapOf("filter" to filter))
             .retrieve()
             .bodyToMono<CurrencyResponseDTO>()
-            .timeout(Duration.ofSeconds(3))
+            .timeout(Duration.ofSeconds(10))
             .doOnError { println("Error fetching currency data: ${it.message}") }
             .retryWhen(
                 Retry.backoff(3, Duration.ofSeconds(2))
