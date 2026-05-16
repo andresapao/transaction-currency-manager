@@ -1,14 +1,19 @@
 package org.transactions.currency.service
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
+import org.transactions.currency.client.model.CurrencyDateInfo
 import org.transactions.currency.gateway.CurrencyGatewayImpl
 import org.transactions.currency.model.TransactionCurrencyResponse
 import org.transactions.currency.model.TransactionRequest
 import org.transactions.currency.repository.TransactionRepository
-import java.math.RoundingMode
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 import kotlin.time.measureTimedValue
 
 
@@ -17,7 +22,30 @@ class TransactionService(
     private val repository: TransactionRepository,
     private val currencyGatewayImpl: CurrencyGatewayImpl
 ) {
-    //private val logger = KotlinLogging.logger {}
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    private val cache: Cache<String, CurrencyDateInfo?> = Caffeine.newBuilder()
+        .expireAfterWrite(
+            60,
+            TimeUnit.MINUTES
+        )
+        .recordStats()
+        .build()
+
+    @Cacheable("transactionCache")
+    private fun getCurrencyInfo(currencyCode: String, transactionDate: LocalDate): CurrencyDateInfo? {
+        return cache.get("$currencyCode-$transactionDate") { key ->
+            val filter = "record_date:gte:${transactionDate.minusMonths(6).format(formatter)},currency:eq:$currencyCode"
+            val currencyInfo = currencyGatewayImpl.getValueAtCurrency(filter).getOrNull(0)
+            if (currencyInfo != null) {
+                println("Cache miss for key: $key")
+            } else {
+                println("No data found for key: $key")
+            }
+            currencyInfo
+        }
+    }
+
     fun create(request: TransactionRequest) = repository.save(request.toEntity())
     fun getTransactionWithExchangeRate(id: Long, targetCurrency: String): TransactionCurrencyResponse {
         val transaction = repository.findById(id).orElseThrow({
@@ -27,20 +55,20 @@ class TransactionService(
             )
         })
 
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val formattedDate = transaction.creationDate.minusMonths(6).format(formatter)
-        val filter: String = "record_date:gte:${formattedDate},currency:eq:${targetCurrency}&sort:-record_date"
-        val (exchangeRate, elapsedTime) = measureTimedValue { currencyGatewayImpl.getValueAtCurrency(filter).get(0) }
+        val (exchangeRate, elapsedTime) = measureTimedValue {
+            getCurrencyInfo(
+                targetCurrency,
+                transaction.creationDate
+            )
+        }
 
         println("Elapsed time for getting rate: " + elapsedTime.inWholeMilliseconds + " ms")
-        return TransactionCurrencyResponse(
-            id = transaction.id!!,
-            originalValue = transaction.amount,
-            description = transaction.description,
-            exchangeRate = exchangeRate.rate,
-            convertedValue = (transaction.amount * exchangeRate.rate).setScale(2, RoundingMode.HALF_UP),
-            creationDate = transaction.creationDate
-        )
+        if (exchangeRate == null)
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Exchange not found"
+            )
+        return TransactionCurrencyResponse.build(transaction, exchangeRate.rate)
     }
 }
 
