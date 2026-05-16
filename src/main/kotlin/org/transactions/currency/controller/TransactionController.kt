@@ -1,9 +1,10 @@
 package org.transactions.currency.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import org.transactions.currency.client.model.CurrencyDateInfo
 import org.transactions.currency.gateway.FindCurrencyService
 import org.transactions.currency.model.TransactionCurrencyResponse
 import org.transactions.currency.model.TransactionRequest
@@ -17,26 +18,32 @@ class TransactionController(
     private val service: TransactionService,
     private val currencyService: FindCurrencyService
 ) {
-    @GetMapping("/currency")
-    fun getCurency(
-        @RequestParam(required = false) date: String?,
-        @RequestParam(required = false) currency: String = "Real"
-    ): ResponseEntity<List<CurrencyDateInfo>> {
-        val recordDate = date ?: LocalDate.now().toString()
-        val filter = "record_date:eq:$recordDate,currency:eq:$currency"
-        val currencies = currencyService.getValueAtCurrency(filter)
-        return ResponseEntity.ok(currencies)
-    }
-
-    @GetMapping
-    fun get(@RequestParam(required = false) id: Long): ResponseEntity<TransactionCurrencyResponse> {
-        val transactionResponse = service.getTransactionWithExchangeRate(id, "Real")
+    @Operation(summary = "Get transactions by id")
+    @GetMapping("/{id}")
+    fun getId(
+        @PathVariable id: Long,
+        @Parameter(description = "currency (default Real)", example = "Brazil-Real")
+        @RequestParam targetCurrency: String = "Brazil-Real"
+    ): ResponseEntity<TransactionCurrencyResponse> {
+        val transactionResponse = service.getTransactionWithExchangeRate(id, targetCurrency)
         return ResponseEntity.ok(transactionResponse)
     }
 
-    @Operation(summary = "Insert USD transaction", description = "Insert transaction")
+    @Operation(summary = "Get transactions by date")
+    @GetMapping
+    fun getByDateRange(
+        @RequestParam(required = true) startDate: LocalDate,
+        @RequestParam(required = true) endDate: LocalDate,
+        @Parameter(description = "currency (default Real)", example = "Brazil-Real")
+        @RequestParam targetCurrency: String = "Brazil-Real"
+    ): ResponseEntity<List<TransactionCurrencyResponse>> {
+        val transactionResponse = service.getTransactionsByDate(startDate, endDate, targetCurrency)
+        return ResponseEntity.ok(transactionResponse)
+    }
+
+    @Operation(summary = "Insert USD transaction")
     @PostMapping
-    fun create(@RequestBody request: TransactionRequest): ResponseEntity<Transaction> {
+    fun create(@RequestBody @Valid request: TransactionRequest): ResponseEntity<Transaction> {
         val savedEntity = service.create(request)
         return ResponseEntity.ok(savedEntity)
     }

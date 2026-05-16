@@ -6,6 +6,9 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.transactions.currency.client.model.CurrencyDateInfo
 import org.transactions.currency.client.model.CurrencyResponseDTO
+import reactor.core.publisher.Mono
+import reactor.util.retry.Retry
+import java.time.Duration
 
 @Component
 class CurrencyGatewayImpl(
@@ -19,6 +22,17 @@ class CurrencyGatewayImpl(
             .uri("$ratesUrl?filter={filter}", mapOf("filter" to filter))
             .retrieve()
             .bodyToMono<CurrencyResponseDTO>()
+            .timeout(Duration.ofSeconds(3))
+            .doOnError { println("Error fetching currency data: ${it.message}") }
+            .retryWhen(
+                Retry.backoff(3, Duration.ofSeconds(2))
+                    .doBeforeRetry { retrySignal ->
+                        println(
+                            "Retry attempt ${retrySignal.totalRetries() + 1} failed. Reason: ${retrySignal.failure().message}",
+                        );
+                    }
+            )
+            .onErrorResume { Mono.empty<CurrencyResponseDTO>() }
             .block()
 
         return response?.data ?: emptyList()

@@ -2,6 +2,7 @@ package org.transactions.currency.service
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
@@ -38,22 +39,16 @@ class TransactionServiceTest : StringSpec({
             )
         )
 
-        // First call to simulate fetching from repository
         val firstResult = transactionService.getTransactionWithExchangeRate(
             id,
             currencyCode
         )
-        //     firstResult shouldBe cachedData
-
-
-        // Second call to ensure it fetches from cache
         val secondResult = transactionService.getTransactionWithExchangeRate(
             id,
             currencyCode
         )
-        //   secondResult shouldBe cachedData
         verify(exactly = 1) { currencyGatewayImpl.getValueAtCurrency(any()) }
-
+        firstResult shouldBeEqual secondResult
     }
 
 
